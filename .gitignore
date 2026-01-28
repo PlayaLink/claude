@@ -1,0 +1,12 @@
+# Child projects (have their own git repos)
+benchmarkr/
+untitled-ds/
+
+# Claude Code local settings
+.claude/
+
+# Cursor
+.cursor/
+
+# OS files
+.DS_Store
