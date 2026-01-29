@@ -1,0 +1,25 @@
+# Credentials (sensitive)
+credentials.json
+token.json
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Generated data
+data/
+logs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
