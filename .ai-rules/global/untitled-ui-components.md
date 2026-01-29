@@ -1,317 +1,299 @@
 ---
-description: Untitled UI design system usage, Figma workflow, and component patterns
+description: Creating new components in untitled-ds from Figma designs
 ---
 
-# Untitled UI + Figma Workflow
+# Creating Components in untitled-ds
 
-This project uses the Untitled UI design system with Figma integration via MCP.
-
-## Quick Reference
-
-- **Design tokens**: `/theme.css`
-- **Components**: `components/untitled-ui/` (pre-installed, import from index)
-- **Custom components**: `components/custom/` (app-specific, yours to edit)
-- **Icons**: `@untitledui/icons`
-- **Import pattern**: `import { Button, Input, Select } from '@/components/untitled-ui'`
+This guide covers the workflow for adding new components to the `untitled-ds` design system package.
 
 ---
 
-# Part 1: Figma URL Workflow
+## Step 1: Pull from Untitled UI CLI
 
-When the user provides a Figma URL:
+Start by importing the component from the Untitled UI CLI:
 
-## Step 1: Fetch Figma Data
+```bash
+cd untitled-ds
+npx untitledui@latest add <component-name> --path src/components --overwrite
+```
 
-Use the MCP tool `get_figma_data` with:
+This gives you a working React Aria implementation as a starting point.
+
+---
+
+## Step 2: Fetch Figma Data for Parity Check
+
+Use the MCP tool `get_figma_data` to fetch the master component from Figma:
+
 - **fileKey**: Extract from URL (e.g., `figma.com/design/{fileKey}/...`)
 - **nodeId**: Extract from URL param `node-id` (convert `1176-99947` → `1176:99947`)
 
-## Step 2: Identify Components
+Request the **master component URL** (not an instance) to see ALL variants and properties.
 
-Parse the Figma data and categorize all `type: INSTANCE` nodes:
+---
 
-| Category | How to Identify | Action |
-|----------|-----------------|--------|
-| Available in CLI | Matches known component (Button, Badge, etc.) | Import from `@/components/untitled-ui` |
-| Internal Figma (`_` prefix) | Name starts with `_` (e.g., `_Nav item base`) | Must build in `components/custom/` |
-| Custom/app-specific | No CLI equivalent exists | Must build in `components/custom/` |
+## Step 3: Verify Prop/Variant Parity
 
-## Step 3: Request Master Component URLs
+Compare the Figma component properties with the React implementation. Ensure 1:1 parity:
 
-For components that need to be built, **ask the user for master component URLs**:
+### Figma Properties → React Props
 
-> I found these components that need to be built:
->
-> | Component | Usage Count |
-> |-----------|-------------|
-> | `_Nav item base` | 9× |
-> | `_Nav account card` | 1× |
-> | `Company logo` | 1× |
->
-> Please provide the Figma URLs to where each master component is defined.
-> Format: `https://www.figma.com/design/{fileKey}/?node-id={componentSetId}`
->
-> This will give me access to all variants and properties for complete implementations.
+| Figma Property Type | React Equivalent |
+|---------------------|------------------|
+| Variant (e.g., `Size=sm/md/lg`) | `size?: 'sm' \| 'md' \| 'lg'` |
+| Boolean (e.g., `Icon leading=true/false`) | `iconLeading?: FC<{ className?: string }>` |
+| Instance swap (e.g., `Icon swap`) | Value for the boolean prop above |
+| Text (e.g., `Label`) | `children: ReactNode` |
 
-**Why master URLs?** Instance data only shows the *used* configuration. Master components show ALL variants, boolean toggles, and instance swap slots.
+### Common Gaps to Check
 
-## Step 4: Fetch Master Component Data
+1. **Missing variants** - Figma has sizes/colors the React code doesn't support
+2. **Missing boolean toggles** - Figma has show/hide options not exposed as props
+3. **Hardcoded values** - React code has hardcoded strings that should be props
+4. **Extra functionality** - React code has features not in Figma (remove or flag)
 
-Use `get_figma_data` with each user-provided URL to retrieve:
-- All variant combinations (e.g., `Current=True/False`, `State=Default/Hover/Active`)
-- All boolean properties (show/hide toggles like `Icon leading`, `Badge`, `Dot`)
-- All instance swap slots (e.g., `Icon swap` for custom icons)
-- Default values for each property
+### Documenting Parity
 
-## Step 5: Build Components
-
-Create components in `components/custom/` with:
-- Props derived from Figma variants/properties
-- `@figma` annotation linking to master component URL (user-provided)
-- `@figma-captured` timestamp (for detecting stale links if Figma reorganizes)
-- Complete TypeScript interface matching all Figma options
-
-### Component JSDoc Format
+Add a JSDoc comment mapping Figma properties to React props:
 
 ```tsx
 /**
- * NavItem - Navigation item wrapper
- *
- * @figma https://www.figma.com/design/XXX/?node-id=2:9020
- * @figma-captured 2025-12-26
- * Master component: _Nav item base
+ * Badge component
+ * @docs https://www.untitledui.com/react/components/badges
+ * @figma https://www.figma.com/design/XXX/?node-id=19483-6597
  *
  * Figma Properties → React Props:
- * - Current (variant) → isCurrent: boolean
- * - State (variant) → CSS handles (hover/focus)
+ * - Size (variant) → size: 'sm' | 'md' | 'lg'
+ * - Type (variant) → type: 'pill-color' | 'badge-color' | 'badge-modern'
+ * - Color (variant) → color: BadgeColor
  * - Icon leading (boolean) → iconLeading?: FC
- * - Icon swap (instance) → iconLeading value
  * - Icon trailing (boolean) → iconTrailing?: FC
- * - Badge (boolean) → badge?: ReactNode
  * - Dot (boolean) → dot?: boolean
+ * - Avatar (boolean) → image?: string
+ * - Button (boolean) → button?: BadgeButtonProps
  */
 ```
 
-## Step 6: Use Components
-
-1. Import available components from `@/components/untitled-ui`
-2. Import custom components from `@/components/custom`
-3. Follow design tokens from `/theme.css`
-
-**All base and application components are pre-installed.** Just import and use them.
-
 ---
 
-# Part 2: Design Tokens
+## Step 4: Replace @untitledui/icons with Icon Component
 
-All tokens are defined in `/theme.css` using Tailwind CSS v4 `@theme` syntax.
+Untitled UI CLI imports use `@untitledui/icons`. Replace these with our `Icon` component architecture.
 
-## Colors
+### In Component Files
 
-**Base scales** (25-950): `gray`, `brand`, `error`, `warning`, `success`, `blue`, `indigo`, `purple`, `pink`, `rose`, `orange`, `teal`, `cyan`
+Replace direct icon imports with `createIcon`:
 
 ```tsx
-<div className="bg-gray-50 text-gray-900 border-gray-200">
-<button className="bg-brand-600 hover:bg-brand-700 text-white">
-<span className="text-error-500">Error</span>
+// ❌ Before (Untitled UI pattern)
+import { ChevronDown, Check, X } from '@untitledui/icons'
+
+<Button iconTrailing={ChevronDown}>Options</Button>
+
+// ✅ After (untitled-ds pattern)
+import { createIcon } from '../icon'
+
+const ChevronDownIcon = createIcon('chevron-down', 'sm')
+const CheckIcon = createIcon('check', 'sm')
+
+<Button iconTrailing={ChevronDownIcon}>Options</Button>
 ```
 
-## Border Radius
+### In Storybook Stories
 
-| Token | Tailwind |
-|-------|----------|
-| `--radius-xs` | `rounded-xs` |
-| `--radius-sm` | `rounded-sm` |
-| `--radius-md` | `rounded-md` |
-| `--radius-lg` | `rounded-lg` |
-| `--radius-xl` | `rounded-xl` |
-| `--radius-2xl` | `rounded-2xl` |
-| `--radius-full` | `rounded-full` |
-
-## Shadows
-
-| Token | Tailwind |
-|-------|----------|
-| `--shadow-xs` | `shadow-xs` |
-| `--shadow-sm` | `shadow-sm` |
-| `--shadow-md` | `shadow-md` |
-| `--shadow-lg` | `shadow-lg` |
-| `--shadow-xl` | `shadow-xl` |
-
----
-
-# Part 3: Available Components
-
-## Pre-installed Components
-
-All these components are ready to import from `@/components/untitled-ui`:
-
-### Base Components
-- `Button`, `ButtonGroup`, `ButtonGroupItem`
-- `Checkbox`, `CheckboxBase`
-- `Dropdown` (compound: `Dropdown.Root`, `.Menu`, `.Item`, etc.)
-- `FeaturedIcon`
-- `Input`, `InputBase`, `TextField`, `Label`, `HintText`
-- `RadioGroup.*` variants
-- `Select`, `ComboBox`, `MultiSelect`, `SelectItem`
-- `Slider`
-- `TagGroup`, `TagList`, `Tag`
-- `TextArea`, `TextAreaBase`
-- `Toggle`, `ToggleBase`
-- `Tooltip`, `TooltipTrigger`
-
-### Application Components
-- `Breadcrumbs`, `BreadcrumbItem`
-- `DatePicker`, `DateRangePicker`, `Calendar`, `RangeCalendar`
-- `EmptyState`
-- `Tabs`, `TabList`, `TabPanel`, `Tab`
-
-### Shared Assets
-- `BackgroundPattern`
-- `Illustration`
-
-## Custom Components (Build with Tailwind)
-
-These patterns are NOT in the library - compose from primitives or build with Tailwind:
-- Sidebar navigation
-- Page headers / Nav items
-- Cards (account, pricing, custom)
-- Tables (use HTML + Tailwind)
-- Modals (use React Aria directly)
-
----
-
-# Part 4: Icons
-
-Import from `@untitledui/icons`:
+Always use `createIcon` for demo icons:
 
 ```tsx
-import { ArrowRight, Check, X, Plus, Search } from '@untitledui/icons';
+import { createIcon } from '../icon'
 
-// Pass as component (recommended)
-<Button iconTrailing={ArrowRight}>Continue</Button>
-
-// Or as element
-<Button iconLeading={<Check data-icon />}>Confirm</Button>
+// Icons for demos
+const ArrowRightIcon = createIcon('arrow-right', 'sm')
+const ChevronDownIcon = createIcon('chevron-down', 'sm')
+const CheckIcon = createIcon('check', 'sm')
 ```
 
-**Figma name → Import**: kebab-case to PascalCase
-- `arrow-right` → `ArrowRight`
-- `check-circle` → `CheckCircle`
-- `user-plus-01` → `UserPlus01`
+### Adding New Icons to the Registry
 
----
-
-# Part 5: State Handling
-
-**Figma states are NOT React props** (except disabled/loading):
-
-| Figma State | React |
-|-------------|-------|
-| `State=Default` | Normal render |
-| `State=Hover` | CSS handles automatically |
-| `State=Focus` | CSS handles automatically |
-| `State=Disabled` | `isDisabled={true}` |
-| `State=Loading` | `isLoading={true}` |
-| `Destructive=True` | `color="primary-destructive"` |
-
----
-
-# Part 6: Component Organization
-
-## Directory Structure
-
-```
-components/
-├── custom/               # CUSTOM - app-specific components
-│   ├── empty-states/     # Empty state components
-│   ├── labels/           # Label-related components
-│   └── *.tsx             # Your composed/custom components
-│
-└── untitled-ui/          # PURE - CLI-installed, never manually edit
-    ├── base/             # Primitive components (matches Figma Base file)
-    ├── application/      # App UI components (matches Figma Application file)
-    ├── shared-assets/    # Patterns, illustrations (matches Figma Shared Assets file)
-    ├── foundations/      # Design foundations (FeaturedIcon)
-    └── index.ts          # Re-exports all components
-```
-
-## Rules
-
-| Scenario | Directory | Approach |
-|----------|-----------|----------|
-| Using component as-is | `untitled-ui/` | Import directly, never modify |
-| Composing components | `custom/` | Create new component that imports from `untitled-ui/` |
-| Modifying a component | `custom/` | Copy from `untitled-ui/`, rename, add `@forked-from` |
-| Building from scratch | `custom/` | Build with Tailwind, may use `untitled-ui/` primitives |
-
-## Documentation Links
-
-After installing an Untitled UI component via the CLI, add a `@docs` annotation to the main component file linking to the official documentation:
+If an icon doesn't exist in `Icon.tsx`, add it to the `iconMap`:
 
 ```tsx
-/**
- * Button component
- * @docs https://www.untitledui.com/components/button
- */
+// src/components/icon/Icon.tsx
+import { faNewIcon } from '@fortawesome/free-solid-svg-icons'
+
+const iconMap = {
+  // ... existing icons
+  'new-icon': faNewIcon,
+} as const
 ```
 
-**URL Pattern**: `https://www.untitledui.com/components/[component-name]`
+### Icon Size Reference
+
+| Size | Tailwind | Pixels | Use Case |
+|------|----------|--------|----------|
+| `2xs` | `size-2` | 8px | Tiny dots |
+| `xs` | `size-2.5` | 10px | Small indicators |
+| `sm` | `size-3` | 12px | Badge icons, small buttons |
+| `md` | `size-4` | 16px | Default |
+| `lg` | `size-5` | 20px | Standard UI icons |
+| `xl` | `size-6` | 24px | Large icons (Figma default) |
+| `2xl` | `size-8` | 32px | Max size |
 
 ---
 
-# Part 7: Untitled UI Architecture & Forking
+## Step 5: Apply Semantic Color Tokens
 
-## How Untitled UI Works
+Replace primitive grayscale colors with semantic tokens for dark mode support:
 
-Untitled UI uses a **copy-to-codebase model** (like shadcn/ui):
+| Replace | With |
+|---------|------|
+| `text-gray-900` | `text-primary` |
+| `text-gray-700`, `text-gray-800` | `text-secondary` |
+| `text-gray-500`, `text-gray-600` | `text-tertiary` |
+| `bg-base-white` | `bg-primary` |
+| `bg-gray-50` | `bg-secondary` |
+| `border-gray-300` | `border-primary` |
+| `border-gray-200` | `border-secondary` |
 
-```bash
-npx untitledui@latest add [component-name]  # Copies source to components/untitled-ui/
-```
+**Keep primitives** for intentionally colored elements (brand colors, status indicators).
 
-**From NPM packages:**
-- `@untitledui/icons` - Icon components only
-- `@untitledui/file-icons` - File type icons only
+---
 
-**Everything else is copied source code** - not imported from a package.
+## Step 6: Organize Styles with sortCx
 
-## When to Fork vs Use Directly
+Structure styles for IntelliSense support:
 
-| Scenario | Approach | Example |
-|----------|----------|---------|
-| Need subset of variants/props | Use directly | Button with only `color="primary"` |
-| Component has hardcoded demo data | Fork | NavAccountCard with placeholder accounts |
-| Need fundamentally different behavior | Fork | Account display vs account switching |
-| Want to simplify complex component | Fork | Remove unused features/variants |
-
-## Forking Workflow
-
-When the user's Figma design uses a simplified version of an Untitled UI component:
-
-### Step 1: Copy to Custom
-```bash
-cp components/untitled-ui/.../component.tsx components/custom/component.tsx
-```
-
-### Step 2: Strip Unneeded Functionality
-Remove:
-- Unused variants and their styles
-- Hardcoded demo/placeholder data
-- Features not needed (e.g., account switching, keyboard nav)
-- Unused imports and dependencies
-
-### Step 3: Add Documentation
 ```tsx
-/**
- * NavAccountCard - Simplified user account display
- *
- * @figma https://www.figma.com/design/CUSTOM_FILE/?node-id=...
- * @forked-from components/untitled-ui/application/app-navigation/base-components/nav-account-card.tsx
- * @figma-captured 2025-01-05
- *
- * Simplified from Untitled UI version:
- * - Removed: Account switching, popover menu, keyboard navigation
- * - Kept: Avatar, name, email display, logout button
- */
+import { cx, sortCx } from '@/utils/cx'
+
+export const styles = sortCx({
+  base: 'inline-flex items-center font-medium',
+  size: {
+    sm: { base: 'px-2 py-0.5 text-xs', withIcon: 'pl-1.5 pr-2 gap-1' },
+    md: { base: 'px-2.5 py-0.5 text-sm', withIcon: 'pl-2 pr-2.5 gap-1' },
+  },
+  color: {
+    gray: { root: 'bg-secondary text-secondary', icon: 'text-tertiary' },
+    brand: { root: 'bg-brand-50 text-brand-700', icon: 'text-brand-500' },
+  },
+})
 ```
+
+---
+
+## Step 7: Create Storybook Stories
+
+Create `<component>.stories.tsx` with exactly **3 stories**:
+
+| Story | Purpose |
+|-------|---------|
+| `Overview` | Visual showcase of ALL variants by property |
+| `Props` | Interactive playground with `tags: ['show-panel']` |
+| `SourceCodeAndDesign` | Links to GitHub and Figma |
+
+```tsx
+export const Overview: Story = {
+  render: () => (
+    <div className="flex flex-col gap-8">
+      {/* Group by variant property */}
+      <Section title="Size">
+        {sizes.map(size => <Component size={size} />)}
+      </Section>
+      <Section title="Color">
+        {colors.map(color => <Component color={color} />)}
+      </Section>
+    </div>
+  ),
+}
+
+export const Props: Story = {
+  tags: ['show-panel'],
+  args: { /* default props */ },
+}
+
+export const SourceCodeAndDesign: Story = {
+  name: 'Source Code + Design',
+  render: () => (
+    <div className="flex gap-4">
+      <Button href="https://github.com/..." iconLeading={GitHubIcon}>
+        View on GitHub
+      </Button>
+      <Button href="https://figma.com/..." iconLeading={FigmaIcon}>
+        View in Figma
+      </Button>
+    </div>
+  ),
+}
+```
+
+---
+
+## Step 8: Export from Index Files
+
+```tsx
+// src/components/<name>/index.ts
+export { Component, type ComponentProps, styles } from './component'
+
+// src/index.ts
+export { Component, type ComponentProps, styles as componentStyles } from './components/<name>'
+```
+
+---
+
+## Component Enhancement Philosophy
+
+**Enhance atomic components with optional props rather than creating variant components.**
+
+### ❌ Don't: Create Many Variant Components
+
+```tsx
+// Avoid this pattern
+export const Badge = ...
+export const BadgeWithDot = ...
+export const BadgeWithIcon = ...
+export const BadgeWithImage = ...
+export const BadgeWithButton = ...
+```
+
+### ✅ Do: Add Optional Props to Base Component
+
+```tsx
+// Single component with optional features
+interface BadgeProps {
+  children?: ReactNode
+  size?: BadgeSize
+  color?: BadgeColor
+  iconLeading?: FC<{ className?: string }>
+  iconTrailing?: FC<{ className?: string }>  // optional
+  dot?: boolean                               // optional
+  image?: string                              // optional
+  button?: BadgeButtonProps                   // optional
+}
+```
+
+This keeps the design system DRY and maintainable.
+
+---
+
+## File Structure
+
+```
+src/components/<name>/
+├── <name>.tsx           # Component with JSDoc header
+├── <name>.stories.tsx   # Storybook (3 stories)
+└── index.ts             # Barrel exports
+```
+
+---
+
+## Checklist
+
+- [ ] Pulled component from Untitled UI CLI
+- [ ] Fetched Figma master component data
+- [ ] Verified prop/variant parity (documented in JSDoc)
+- [ ] Replaced `@untitledui/icons` with `createIcon`
+- [ ] Applied semantic color tokens
+- [ ] Organized styles with `sortCx`
+- [ ] Created 3 Storybook stories
+- [ ] Exported from index files
+- [ ] Built library: `npm run build:lib`
+- [ ] Tested in Storybook: `npm run dev`
