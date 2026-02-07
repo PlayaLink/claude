@@ -49,6 +49,18 @@ npm --prefix untitled-ds run storybook
 
 Each project has its own `.env` file. These are loaded when running from within that project directory.
 
+## npm Link: untitled-ds → benchmarkr
+
+`benchmarkr` consumes `untitled-ds` via `npm link` during development. This symlink can silently break.
+
+```bash
+# Re-establish if broken (empty node_modules/@playalink/ directory)
+cd untitled-ds && npm link
+cd benchmarkr && npm link @playalink/untitled-ds
+```
+
+**CSS caveat**: `@tailwindcss/postcss` cannot resolve package.json `exports` maps through symlinks. Always use direct dist paths in CSS `@import` statements (e.g., `@playalink/untitled-ds/dist/styles/tokens.css`, NOT `@playalink/untitled-ds/styles/tokens`).
+
 ## Shared AI Rules
 
 Shared rules for all projects live in `.ai-rules/` at this level:
