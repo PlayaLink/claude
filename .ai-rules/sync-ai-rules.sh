@@ -99,7 +99,7 @@ sync_project() {
                 continue  # Skip, project will override
             fi
             add_always_apply "$file" "$cursor_out/${basename}.mdc"
-            ((global_count++))
+            global_count=$((global_count + 1))
         done
     fi
 
@@ -109,7 +109,7 @@ sync_project() {
             [ -f "$file" ] || continue
             local basename=$(basename "$file" .md)
             add_always_apply "$file" "$cursor_out/${basename}.mdc"
-            ((global_count++))
+            global_count=$((global_count + 1))
         done
     fi
 
@@ -124,7 +124,7 @@ sync_project() {
             fi
             add_always_apply "$file" "$cursor_out/${basename}.mdc" "false"
             cp "$file" "$claude_out/${basename}.md"
-            ((conditional_count++))
+            conditional_count=$((conditional_count + 1))
         done
     fi
 
@@ -135,7 +135,7 @@ sync_project() {
             local basename=$(basename "$file" .md)
             add_always_apply "$file" "$cursor_out/${basename}.mdc" "false"
             cp "$file" "$claude_out/${basename}.md"
-            ((conditional_count++))
+            conditional_count=$((conditional_count + 1))
         done
     fi
 
@@ -154,7 +154,7 @@ sync_project() {
                 [ -f "$file" ] || continue
                 cp "$file" "$claude_skills_out/$skill_name/"
             done
-            ((skill_count++))
+            skill_count=$((skill_count + 1))
         done
     fi
 
@@ -168,7 +168,7 @@ sync_project() {
                 [ -f "$file" ] || continue
                 cp "$file" "$claude_skills_out/$skill_name/"
             done
-            ((skill_count++))
+            skill_count=$((skill_count + 1))
         done
     fi
 
