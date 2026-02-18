@@ -1,95 +1,49 @@
-# Jordan OS Workspace
+# Claude Workspace
 
-This is a workspace containing multiple projects. Each project has its own git repository, dependencies, and environment.
+This file provides workspace-level context for `/Users/jengland/claude`.
+Keep process and behavior rules out of this file.
 
-## Projects
+## Repositories
 
-| Project | Description | Tech Stack |
-|---------|-------------|------------|
-| `benchmarkr/` | QC web app for factory workers | Next.js, Prisma, Supabase, Clerk |
-| `untitled-ds/` | Untitled UI design system library | React, Storybook, npm publishing |
+| Repo | Purpose |
+|------|---------|
+| `benchmarkr/` | QC web app for factory workflows |
+| `chg/` | Multi-repo CHG product workspace |
+| `crewfinder/` | Crewfinder product repo |
+| `untitled-ds/` | Untitled UI design system library |
 
-## Working Across Projects
+## Working Across Repos
 
-### Important: Project Context
-
-Each project is independent. Before running commands, ensure you're in the correct project directory:
-
-```bash
-cd benchmarkr    # or cd untitled-ds
-```
-
-### Git
-
-Each project has its own `.git` repository. Git commands must be run from within a project:
+Each project is independent and has its own git history, dependencies, and env.
 
 ```bash
-# Option 1: cd first
-cd benchmarkr && git status
+# Work in a specific repo
+cd benchmarkr
 
-# Option 2: use -C flag
+# Or run commands from workspace root
 git -C benchmarkr status
-git -C untitled-ds log -5
-```
-
-### npm / Node
-
-Each project has its own `package.json` and `node_modules`:
-
-```bash
-# Option 1: cd first
-cd benchmarkr && npm run dev
-
-# Option 2: use --prefix
 npm --prefix benchmarkr run dev
-npm --prefix untitled-ds run storybook
 ```
 
-### Environment Variables
+## Shared Dependency Note
 
-Each project has its own `.env` file. These are loaded when running from within that project directory.
-
-## npm Link: untitled-ds → benchmarkr
-
-`benchmarkr` consumes `untitled-ds` via `npm link` during development. This symlink can silently break.
+`benchmarkr` consumes `untitled-ds` through `npm link` during local development.
+If the link breaks:
 
 ```bash
-# Re-establish if broken (empty node_modules/@playalink/ directory)
 cd untitled-ds && npm link
 cd benchmarkr && npm link @playalink/untitled-ds
 ```
 
-**CSS caveat**: `@tailwindcss/postcss` cannot resolve package.json `exports` maps through symlinks. Always use direct dist paths in CSS `@import` statements (e.g., `@playalink/untitled-ds/dist/styles/tokens.css`, NOT `@playalink/untitled-ds/styles/tokens`).
+For Tailwind/PostCSS imports through symlinks, prefer direct dist paths.
 
-## Shared AI Rules
+## Instruction Sources
 
-Shared rules for all projects live in `.ai-rules/` at this level:
+- Agent behavior and process rules are synced into each repo `AGENTS.md`.
+- Source of truth is `/Users/jengland/claude/.ai-rules/`.
+- After rule edits, run `./.ai-rules/sync-ai-rules.sh` from `/Users/jengland/claude`.
+- Shared rules can be overridden by `{project}/.ai-rules/` when filenames match.
 
-```
-.ai-rules/
-├── global/           # Applied to all projects
-├── skills/           # Shared skills (/commit, /untitled-ui-component)
-└── sync-ai-rules.sh  # Syncs to all projects
-```
+## Repo Context Docs
 
-### Sync Rules
-
-After editing shared rules, run:
-
-```bash
-./.ai-rules/sync-ai-rules.sh
-```
-
-This discovers all projects and syncs shared + project-specific rules to each.
-
-### Rule Precedence
-
-Project-specific rules override shared rules when filenames match:
-1. Shared rules from `jordan-os/.ai-rules/`
-2. Project rules from `{project}/.ai-rules/` (override shared)
-
-## Project-Specific Instructions
-
-For detailed project context, see each project's `CLAUDE.md`:
-- `benchmarkr/CLAUDE.md` - Database schema, API patterns, component usage
-- `untitled-ds/CLAUDE.md` - Component development, Storybook, npm publishing
+Use each repo's own `CLAUDE.md` for project-specific runtime context.
