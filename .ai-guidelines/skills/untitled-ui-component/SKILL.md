@@ -63,7 +63,12 @@ Common Figma-to-React mappings:
 ### Step 6: Build the Implementation
 
 1. **Import Untitled UI components** from `@/components/untitled-ui`
-2. **Import icons** from `@untitledui/icons` (kebab-case → PascalCase)
+2. **Import icons** using `createIcon` from `../icon` (NOT `@untitledui/icons`):
+   ```tsx
+   import { createIcon } from '../icon'
+   const ChevronDownIcon = createIcon('chevron-down', 'sm')
+   ```
+   If an icon doesn't exist in the registry, add it to `src/components/icon/Icon.tsx` in the `iconMap`.
 3. **Create custom components** in `components/custom/` with proper JSDoc:
 
 ```tsx
@@ -90,4 +95,4 @@ Show the user:
 - Design tokens: `/theme.css`
 - Components: `components/untitled-ui/` (import from index)
 - Custom: `components/custom/`
-- Icons: `@untitledui/icons`
+- Icons: Use `createIcon` from `../icon` — do NOT use `@untitledui/icons`

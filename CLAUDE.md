@@ -39,10 +39,10 @@ For Tailwind/PostCSS imports through symlinks, prefer direct dist paths.
 
 ## Instruction Sources
 
-- Agent behavior and process rules are synced into each repo `AGENTS.md`.
-- Source of truth is `/Users/jengland/claude/.ai-rules/`.
-- After rule edits, run `./.ai-rules/sync-ai-rules.sh` from `/Users/jengland/claude`.
-- Shared rules can be overridden by `{project}/.ai-rules/` when filenames match.
+- Agent behavior and process guidelines are synced into each repo `AGENTS.md`.
+- Source of truth is `/Users/jengland/claude/.ai-guidelines/`.
+- After guideline edits, run `./.ai-guidelines/sync.sh` from `/Users/jengland/claude`.
+- Shared guidelines can be overridden by `{project}/.ai-guidelines/` when filenames match.
 
 ## Repo Context Docs
 
