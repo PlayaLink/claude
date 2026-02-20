@@ -37,6 +37,9 @@ CODEX_BLOCK_END="<!-- END: AI GUIDELINES SYNC (generated) -->"
 LEGACY_CODEX_BLOCK_START="<!-- BEGIN: AI RULES SYNC (generated) -->"
 LEGACY_CODEX_BLOCK_END="<!-- END: AI RULES SYNC (generated) -->"
 
+GITIGNORE_BLOCK_START="# BEGIN: ai-guidelines sync (generated)"
+GITIGNORE_BLOCK_END="# END: ai-guidelines sync (generated)"
+
 rel_from_workspace() {
   local abs_path="$1"
   if [ "$abs_path" = "$WORKSPACE_DIR" ]; then
@@ -319,9 +322,63 @@ write_manifest() {
   rm -f "$tmp_manifest"
 }
 
+upsert_gitignore_block() {
+  local project_dir="$1"
+  local gitignore_file="$project_dir/.gitignore"
+  local block
+  block="$(cat <<'BLOCK'
+AGENTS.md
+.agents/skills/
+.cursor/rules/
+.claude/rules/
+.claude/skills/
+.claude/commands/
+.ai-guidelines-manifest
+BLOCK
+)"
+
+  if [ -f "$gitignore_file" ]; then
+    if grep -qF "$GITIGNORE_BLOCK_START" "$gitignore_file" && grep -qF "$GITIGNORE_BLOCK_END" "$gitignore_file"; then
+      # Replace existing block
+      local temp_file
+      temp_file="$(mktemp)"
+      awk -v start="$GITIGNORE_BLOCK_START" -v end="$GITIGNORE_BLOCK_END" -v block="$block" '
+        $0 == start {
+          print start
+          print block
+          skipping = 1
+          next
+        }
+        $0 == end {
+          print end
+          skipping = 0
+          next
+        }
+        skipping != 1 { print }
+      ' "$gitignore_file" > "$temp_file"
+      mv "$temp_file" "$gitignore_file"
+    else
+      # Append new block
+      {
+        echo ""
+        echo "$GITIGNORE_BLOCK_START"
+        echo "$block"
+        echo "$GITIGNORE_BLOCK_END"
+      } >> "$gitignore_file"
+    fi
+  else
+    # Create new .gitignore with block
+    {
+      echo "$GITIGNORE_BLOCK_START"
+      echo "$block"
+      echo "$GITIGNORE_BLOCK_END"
+    } > "$gitignore_file"
+  fi
+}
+
 discover_projects() {
   find "$WORKSPACE_DIR" \
-    \( -path "*/node_modules/*" -o -path "*/.git/*" \) -prune -o \
+    \( -path "*/node_modules/*" -o -path "*/.git/*" -o -path "$WORKSPACE_DIR/.tmp/*" \) -prune -o \
     \( -name ".git" -type d -o -name ".git" -type f \) -print \
     | while IFS= read -r git_path; do
         dirname "$git_path"
@@ -463,6 +520,7 @@ sync_project() {
   rm -f "$codex_block_tmp"
 
   write_manifest "$project_dir" "$manifest_file"
+  upsert_gitignore_block "$project_dir"
 
   echo "   ✓ Global: $global_count | Conditional: $conditional_count | Skills: $skill_count | Commands: $command_count | Codex guidelines: $codex_count"
 }
