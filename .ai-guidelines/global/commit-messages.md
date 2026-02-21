@@ -10,6 +10,15 @@ description: Conventional commit format and guidelines for git commits
 
 Your task is to help the user to generate a commit message and commit the changes using git.
 
+## Trigger Mapping
+
+Treat these user inputs as an explicit commit request:
+- `/commit`
+- `/commit ...` (with arguments)
+- "commit this work" (or equivalent phrasing)
+
+For tools that do not support slash commands natively, interpret `/commit` as a plain-text alias for the commit workflow and apply this guideline.
+
 **CRITICAL - No Promotional Text**:
 - DO NOT add "Generated with [Claude Code](https://claude.com/claude-code)" or any variation
 - DO NOT add "Co-Authored-By: Claude" lines

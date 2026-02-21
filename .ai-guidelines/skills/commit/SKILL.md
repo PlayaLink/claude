@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Create a git commit following the project's conventional commit format
+description: Create a git commit; trigger when user asks to commit or types /commit
 ---
 
 # Commit Skill
