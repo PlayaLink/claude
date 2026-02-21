@@ -15,5 +15,8 @@ chg/
 # MCP configuration (contains API keys)
 .mcp.json
 
+# Environment files (contain secrets)
+.env
+
 # Other
 art-exhibits/
